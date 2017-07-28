@@ -57,3 +57,38 @@ var handlers = {
         this.emit(':tell', STOP_MESSAGE);
     }
 };
+
+function httpsGet(myData, callback) {
+   
+    //      
+    // USGS Water Information System REST API details
+    //
+    var options = {
+            host: 'waterservices.usgs.gov',
+            port: 443,
+            path: '/nwis/iv/?site=03069500&format=json',
+            method: 'GET'
+        };
+
+    var req = https.request(options, res => {
+        res.setEncoding('utf8');
+        var returnData = "";
+
+        res.on('data', chunk => {
+            returnData = returnData + chunk;
+        });
+
+        res.on('end', () => {
+            // we have now received the raw return data in the returnData variable.
+            // We can see it in the log output via:
+            // console.log(JSON.stringify(returnData))
+            // we may need to parse through it to extract the needed data
+
+            callback(returnData);  // this will execute whatever function the caller defined, with one argument
+
+        });
+
+    });
+    req.end();
+
+}
