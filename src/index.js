@@ -1,4 +1,5 @@
 'use strict';
+var https = require('https');
 var Alexa = require('alexa-sdk');
 
 //=========================================================================================================================================
@@ -15,6 +16,15 @@ var HELP_MESSAGE = "You can say what's the current river level, or, you can say 
 var HELP_REPROMPT = "What can I help you with?";
 var STOP_MESSAGE = "Goodbye!";
 
+//
+// USGS Water Information System REST API details
+//
+var options = {
+            host: 'waterservices.usgs.gov',
+            port: 443,
+            path: '/nwis/iv/?site=03069500&format=json',
+            method: 'GET'
+        };
 
 //=========================================================================================================================================
 //Editing anything below this line might break your skill.  
