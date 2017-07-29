@@ -37,27 +37,7 @@ var handlers = {
             if (responseData == null) {
                 output = "There was a problem with getting data please try again";
             }
-            else {
-                output = newsIntroMessage;
-
-                // If we have data.
-                for (var i = 0; i < responseData.response.docs.length; i++) {
-
-                    if (i < numberOfResults) {
-                        // Get the name and description JSON structure.
-                        var headline = responseData.response.docs[i].headline.main;
-                        var index = i + 1;
-
-                        output += " Headline " + index + ": " + headline + ";";
-
-                        cardContent += " Headline " + index + ".\n";
-                        cardContent += headline + ".\n\n";
-                    }
-                }
-
-                output += " See your Alexa app for more information.";
-            }
-
+            
             var cardTitle = 'Stream flow at Cheat River near Parsons';
 
             alexa.emit(':tellWithCard', streamFlow, cardTitle, streamFlow);
