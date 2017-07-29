@@ -2,9 +2,8 @@
 var https = require('https');
 var Alexa = require('alexa-sdk');
 
-//=========================================================================================================================================
-//TODO: The items below this comment need your attention.
-//=========================================================================================================================================
+ var JSONPath = require('jsonpath-plus');
+ 
 
 //Replace with your app ID (OPTIONAL).  You can find this value at the top of your skill's page on http://developer.amazon.com.  
 //Make sure to enclose your value in quotes, like this: var APP_ID = "amzn1.ask.skill.bb4045e6-b3e8-4133-b650-72923c5980f1";
@@ -16,19 +15,6 @@ var HELP_MESSAGE = "You can say what's the current river level, or, you can say 
 var HELP_REPROMPT = "What can I help you with?";
 var STOP_MESSAGE = "Goodbye!";
 
-//
-// USGS Water Information System REST API details
-//
-var options = {
-            host: 'waterservices.usgs.gov',
-            port: 443,
-            path: '/nwis/iv/?site=03069500&format=json',
-            method: 'GET'
-        };
-
-//=========================================================================================================================================
-//Editing anything below this line might break your skill.  
-//=========================================================================================================================================
 exports.handler = function(event, context, callback) {
     var alexa = Alexa.handler(event, context);
     alexa.APP_ID = APP_ID;
@@ -40,10 +26,42 @@ var handlers = {
     'LaunchRequest': function () {
         this.emit('GetDischargeIntent');
     },
-    'GetDischargeIntent': function () {
-        var dischargeCFS = 512;
-        var speechOutput = GET_FACT_MESSAGE + dischargeCFS;
-        this.emit(':tellWithCard', speechOutput, SKILL_NAME, dischargeCFS);
+    'getDischargeIntent': function () {
+        httpGet(function (response) {
+
+            // Parse the response into a JSON object ready to be formatted.
+            var responseData = JSON.parse(response);
+
+            var streamFlow = JSONPath({json: response, path: '$.value.timeSeries[?(@.variable.variableName=="Streamflow, ft&#179;/s")].values[0].value[0].value}');
+            // Check if we have correct data, If not create an error speech out to try again.
+            if (responseData == null) {
+                output = "There was a problem with getting data please try again";
+            }
+            else {
+                output = newsIntroMessage;
+
+                // If we have data.
+                for (var i = 0; i < responseData.response.docs.length; i++) {
+
+                    if (i < numberOfResults) {
+                        // Get the name and description JSON structure.
+                        var headline = responseData.response.docs[i].headline.main;
+                        var index = i + 1;
+
+                        output += " Headline " + index + ": " + headline + ";";
+
+                        cardContent += " Headline " + index + ".\n";
+                        cardContent += headline + ".\n\n";
+                    }
+                }
+
+                output += " See your Alexa app for more information.";
+            }
+
+            var cardTitle = 'Stream flow at Cheat River near Parsons';
+
+            alexa.emit(':tellWithCard', streamFlow, cardTitle, streamFlow);
+        });
     },
     'AMAZON.HelpIntent': function () {
         var speechOutput = HELP_MESSAGE;
@@ -58,37 +76,35 @@ var handlers = {
     }
 };
 
-function httpsGet(myData, callback) {
-   
-    //      
+// Create a web request and handle the response.
+function httpGet(callback) {
+    
+    //
     // USGS Water Information System REST API details
     //
     var options = {
-            host: 'waterservices.usgs.gov',
-            port: 443,
-            path: '/nwis/iv/?site=03069500&format=json',
-            method: 'GET'
-        };
+        host: 'waterservices.usgs.gov',
+        port: 443,
+        path: '/nwis/iv/?site=03069500&format=json',
+        method: 'GET'
+    };
 
-    var req = https.request(options, res => {
-        res.setEncoding('utf8');
-        var returnData = "";
+    var req = http.request(options, (res) => {
 
-        res.on('data', chunk => {
-            returnData = returnData + chunk;
-        });
+            var body = '';
 
-        res.on('end', () => {
-            // we have now received the raw return data in the returnData variable.
-            // We can see it in the log output via:
-            // console.log(JSON.stringify(returnData))
-            // we may need to parse through it to extract the needed data
+            res.on('data', (d) => {
+                body += d;
+            });
 
-            callback(returnData);  // this will execute whatever function the caller defined, with one argument
-
-        });
+            res.on('end', function () {
+                callback(body);
+            });
 
     });
     req.end();
 
+    req.on('error', (e) => {
+        console.error(e);
+    });
 }
