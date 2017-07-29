@@ -32,7 +32,7 @@ var handlers = {
             // Parse the response into a JSON object ready to be formatted.
             var responseData = JSON.parse(response);
 
-            var streamFlow = JSONPath({json: response, path: '$.value.timeSeries[?(@.variable.variableName=="Streamflow, ft&#179;/s")].values[0].value[0].value}');
+            var streamFlow = JSONPath({json: response, path: '$.value.timeSeries[?(@.variable.variableName=="Streamflow, ft&#179;/s")].values[0].value[0].value}'});
             // Check if we have correct data, If not create an error speech out to try again.
             if (responseData == null) {
                 output = "There was a problem with getting data please try again";
